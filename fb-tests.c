@@ -71,7 +71,7 @@ inline static int draw_pixel(int x, int y, uint8_t red, uint8_t green, uint8_t b
 
 	if (!(0 <= x && x < vinfo.xres && 0 <= y && y < vinfo.yres))
 		/* pixel out of bounds */
-		return;
+		return -2;
 
 	location = cur_buffer_index * screensize;
 	location += (x) * (vinfo.bits_per_pixel/8) + (y) * finfo.line_length;
@@ -120,7 +120,7 @@ int draw_solid_rect(int pos_x, int pos_y, int width, int height, uint8_t r, uint
 	return 0;
 }
 
-long long int get_time_in_ms()
+long long int get_time_in_ms(void)
 {
 	struct timespec spec;
 
@@ -171,7 +171,6 @@ int mainloop(void)
 		uint8_t r = (cur_time / 20 + 128) % 256;
 		uint8_t g = (cur_time / 40 + 256) % 256;
 		uint8_t b = (cur_time / 80 +   0) % 256;
-		int x, y;
 		int ret;
 
 		fill_screen_black();
