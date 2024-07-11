@@ -60,8 +60,11 @@ struct fb_fix_screeninfo finfo;
 
 char *fbp;
 long int screensize = 0; /* only the size of one buffer */
-int fd;
-const unsigned int buffer_count = 2;
+// HERE you should adjust the buffer count:
+//   1: for single buffering
+//   2: for double buffering
+//   3: for triple buffering
+const unsigned int buffer_count = 1;
 unsigned int cur_buffer_index = 0;
 
 
@@ -142,7 +145,7 @@ void sighandler(int signal)
 	}
 }
 
-int wait_for_vsync(void)
+int wait_for_vsync(int fd)
 {
 	int zero = 0, ret;
 
@@ -155,7 +158,7 @@ int wait_for_vsync(void)
 	return 0;
 }
 
-int mainloop(void)
+int mainloop(int fd)
 {
 	int frame_counter = 0;
 	long long int last_time_reset_ms = get_time_in_ms();
@@ -167,7 +170,7 @@ int mainloop(void)
 
 	while (!exit_mainloop) {
 		long long int cur_time = get_time_in_ms();
-		int pos = (cur_time / 10) % vinfo.yres;
+		int pos = (cur_time / 10) % (vinfo.yres - 50);
 		uint8_t r = (cur_time / 20 + 128) % 256;
 		uint8_t g = (cur_time / 40 + 256) % 256;
 		uint8_t b = (cur_time / 80 +   0) % 256;
@@ -180,14 +183,15 @@ int mainloop(void)
 				draw_pixel(x, y, r, g, b)
 			}
 		}*/
-		ret = draw_solid_rect(200, pos, vinfo.xres - 200, 50, r, g, b);
+		ret = draw_solid_rect(100, pos, vinfo.xres - 200, 50, r, g, b);
 		if (ret)
 			return ret;
 
 	//	draw_solid_rect(pos, 300, 400,400, 0, 0, 255);
 
 		/* Wait for vsync to happend */
-		ret = 0; // wait_for_vsync();
+		ret = 0; 
+		wait_for_vsync(fd);
 		if (ret)
 			return ret; /* bail out on error */
 
@@ -197,10 +201,11 @@ int mainloop(void)
 			perror("Cannot FBIOPAN_DISPLAY");
 			return -4;
 		}
+
 		/* Must be after the PAN operation!! */
 		cur_buffer_index = (cur_buffer_index + 1) % buffer_count;
 
-		/* Do fps counter*/
+		/* Do FPS counter*/
 		frame_counter++;
 		if (last_time_reset_ms + 1000 <= cur_time) {
 			last_fps = (double) frame_counter / ((double) cur_time - (double) last_time_reset_ms) * 1000;
@@ -221,11 +226,12 @@ int mainloop(void)
 
 int main(int argc, char** argv)
 {
+	int fd;
 	long long int mmap_size;
 	int ret = 0;
 
 	// Open the file for reading and writing
-	fd= open("/dev/fb0", O_RDWR);
+	fd = open("/dev/fb0", O_RDWR);
 	if (fd == -1) {
 		perror("Error: cannot open framebuffer device");
 		return 1;
@@ -288,7 +294,7 @@ int main(int argc, char** argv)
 	signal(SIGINT, sighandler);
 	signal(SIGTERM, sighandler);
 
-	ret = mainloop();
+	ret = mainloop(fd);
 	if (ret)
 		fprintf(stderr, "Mainloop ended with error %d", ret);
 
