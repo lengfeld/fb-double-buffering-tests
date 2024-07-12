@@ -1,19 +1,19 @@
 /* for timespec and clock_gettime */
 #define _POSIX_C_SOURCE 200809L
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <time.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <linux/fb.h>
-#include <sys/mman.h>
-#include <sys/ioctl.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <linux/fb.h>
+#include <signal.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <time.h>
+#include <unistd.h>
 
 struct fb_var_screeninfo vinfo;
 struct fb_fix_screeninfo finfo;
@@ -34,12 +34,13 @@ struct fb_fix_screeninfo finfo;
  *   };
  *
  *   struct fb_fix_screeninfo {
- *           char id[16];                    // identification string eg "TT Builtin"
- *           unsigned long smem_start;       // Start of frame buffer mem
+ *           char id[16];                    // identification string eg "TT
+ * Builtin" unsigned long smem_start;       // Start of frame buffer mem
  *                                           // (physical address)
  *           __u32 smem_len;                 // Length of frame buffer mem
  *           __u32 type;                     // see FB_TYPE_*
- *           __u32 type_aux;                 // Interleave for interleaved Planes
+ *           __u32 type_aux;                 // Interleave for interleaved
+ * Planes
  *           __u32 visual;                   // see FB_VISUAL_*
  *           __u16 xpanstep;                 // zero if no hardware panning
  *           __u16 ypanstep;                 // zero if no hardware panning
@@ -51,14 +52,15 @@ struct fb_fix_screeninfo finfo;
  *           __u32 accel;                    // Indicate to driver which
  *                                           //  specific chip/card we have
  *           __u16 capabilities;             // see FB_CAP_*
- *           __u16 reserved[2];              // Reserved for future compatibility
+ *           __u16 reserved[2];              // Reserved for future
+ * compatibility
  *   };
  *
- * See also the kernel documentation 
+ * See also the kernel documentation
  *      https://www.kernel.org/doc/Documentation/fb/api.txt
  */
 
-char *fbp;
+char* fbp;
 long int screensize = 0; /* only the size of one buffer */
 // HERE you should adjust the buffer count:
 //   1: for single buffering
@@ -67,9 +69,8 @@ long int screensize = 0; /* only the size of one buffer */
 const unsigned int buffer_count = 1;
 unsigned int cur_buffer_index = 0;
 
-
-inline static int draw_pixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
-{
+inline static int draw_pixel(int x, int y, uint8_t red, uint8_t green,
+			     uint8_t blue) {
 	long long int location = 0;
 
 	if (!(0 <= x && x < vinfo.xres && 0 <= y && y < vinfo.yres))
@@ -77,66 +78,63 @@ inline static int draw_pixel(int x, int y, uint8_t red, uint8_t green, uint8_t b
 		return -2;
 
 	location = cur_buffer_index * screensize;
-	location += (x) * (vinfo.bits_per_pixel/8) + (y) * finfo.line_length;
+	location += (x) * (vinfo.bits_per_pixel / 8) + (y)*finfo.line_length;
 
-	switch(vinfo.bits_per_pixel) {
-	case  32:
-		*(fbp + location) = blue;
-		*(fbp + location + 1) = green;
-		*(fbp + location + 2) = red;
-		*(fbp + location + 3) = 0;	 /* No transparency */
-		break;
-	case 16: {
-		/* TODO describe which color information is dropped */
-		unsigned short int t = red << 11 | green << 5 | blue;
-		*((unsigned short int*)(fbp + location)) = t;
-		break;
-	}
-	default:
-		fprintf(stderr, "Pixel depth %d not supported\n", vinfo.bits_per_pixel);
-		return -1;
+	switch (vinfo.bits_per_pixel) {
+		case 32:
+			*(fbp + location) = blue;
+			*(fbp + location + 1) = green;
+			*(fbp + location + 2) = red;
+			*(fbp + location + 3) = 0; /* No transparency */
+			break;
+		case 16: {
+			/* TODO describe which color information is dropped */
+			unsigned short int t = red << 11 | green << 5 | blue;
+			*((unsigned short int*)(fbp + location)) = t;
+			break;
+		}
+		default:
+			fprintf(stderr, "Pixel depth %d not supported\n",
+				vinfo.bits_per_pixel);
+			return -1;
 	}
 
 	return 0;
 }
 
-void fill_screen_black(void)
-{
+void fill_screen_black(void) {
 	/* faster: */
 	for (int y = 0; y < vinfo.yres; y++)
-		memset(fbp + cur_buffer_index * screensize + y * finfo.line_length,
-			0,
-			(vinfo.xres + vinfo.xoffset) * vinfo.bits_per_pixel/8);
+		memset(
+		    fbp + cur_buffer_index * screensize + y * finfo.line_length,
+		    0, (vinfo.xres + vinfo.xoffset) * vinfo.bits_per_pixel / 8);
 }
 
-int draw_solid_rect(int pos_x, int pos_y, int width, int height, uint8_t r, uint8_t g, uint8_t b)
-{
-	int ret; 
+int draw_solid_rect(int pos_x, int pos_y, int width, int height, uint8_t r,
+		    uint8_t g, uint8_t b) {
+	int ret;
 	for (int x = pos_x; x < pos_x + width; x++) {
 		for (int y = pos_y; y < pos_y + height; y++) {
 			ret = draw_pixel(x, y, r, g, b);
-			if (ret)
-				return ret;
+			if (ret) return ret;
 		}
 	}
 
 	return 0;
 }
 
-long long int get_time_in_ms(void)
-{
+long long int get_time_in_ms(void) {
 	struct timespec spec;
 
 	clock_gettime(CLOCK_REALTIME, &spec); /* Check for errors? */
 
-	return (long long int) spec.tv_sec * 1000 + spec.tv_nsec / 1000 / 1000;
+	return (long long int)spec.tv_sec * 1000 + spec.tv_nsec / 1000 / 1000;
 }
 
 static bool exit_mainloop = false;
 
 /* See '$ man 7 signal' for signal safe library functions */
-void sighandler(int signal)
-{
+void sighandler(int signal) {
 	if (signal == SIGINT || signal == SIGTERM) {
 		exit_mainloop = true;
 	} else {
@@ -145,21 +143,20 @@ void sighandler(int signal)
 	}
 }
 
-int wait_for_vsync(int fd)
-{
+int wait_for_vsync(int fd) {
 	int zero = 0, ret;
 
 	ret = ioctl(fd, FBIO_WAITFORVSYNC, &zero);
 	if (ret) {
-		fprintf(stderr, "Error for FBIO_WAITFORVSYNC: ret=%i (%s)\n", ret, strerror(errno));
+		fprintf(stderr, "Error for FBIO_WAITFORVSYNC: ret=%i (%s)\n",
+			ret, strerror(errno));
 		return ret;
 	}
 
 	return 0;
 }
 
-int mainloop(int fd)
-{
+int mainloop(int fd) {
 	int frame_counter = 0;
 	long long int last_time_reset_ms = get_time_in_ms();
 	double last_fps = 0.0;
@@ -173,27 +170,25 @@ int mainloop(int fd)
 		int pos = (cur_time / 10) % (vinfo.yres - 50);
 		uint8_t r = (cur_time / 20 + 128) % 256;
 		uint8_t g = (cur_time / 40 + 256) % 256;
-		uint8_t b = (cur_time / 80 +   0) % 256;
+		uint8_t b = (cur_time / 80 + 0) % 256;
 		int ret;
 
 		fill_screen_black();
 
 		/*for (y = 100 + pos; y < 300 + pos; y++) {
-			for (x = 100; x < 300; x++) {
-				draw_pixel(x, y, r, g, b)
-			}
+		    for (x = 100; x < 300; x++) {
+			draw_pixel(x, y, r, g, b)
+		    }
 		}*/
 		ret = draw_solid_rect(100, pos, vinfo.xres - 200, 50, r, g, b);
-		if (ret)
-			return ret;
+		if (ret) return ret;
 
-	//	draw_solid_rect(pos, 300, 400,400, 0, 0, 255);
+		//	draw_solid_rect(pos, 300, 400,400, 0, 0, 255);
 
 		/* Wait for vsync to happend */
-		ret = 0; 
+		ret = 0;
 		wait_for_vsync(fd);
-		if (ret)
-			return ret; /* bail out on error */
+		if (ret) return ret; /* bail out on error */
 
 		/* move scanout pointer to buffer that was rendered */
 		vinfo.yoffset = vinfo.yres * cur_buffer_index;
@@ -208,9 +203,11 @@ int mainloop(int fd)
 		/* Do FPS counter*/
 		frame_counter++;
 		if (last_time_reset_ms + 1000 <= cur_time) {
-			last_fps = (double) frame_counter / ((double) cur_time - (double) last_time_reset_ms) * 1000;
-			fprintf(stderr, "%.2ffps frames %i\n",
-				last_fps,
+			last_fps =
+			    (double)frame_counter /
+			    ((double)cur_time - (double)last_time_reset_ms) *
+			    1000;
+			fprintf(stderr, "%.2ffps frames %i\n", last_fps,
 				frame_counter);
 			frame_counter = 0;
 			last_time_reset_ms = cur_time;
@@ -224,8 +221,7 @@ int mainloop(int fd)
 	return 0;
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
 	int fd;
 	long long int mmap_size;
 	int ret = 0;
@@ -250,28 +246,28 @@ int main(int argc, char** argv)
 		return 3;
 	}
 
-	printf("physical: %dx%d, %dbpp offsets %d in x %d in y\n",
-			vinfo.xres, vinfo.yres, vinfo.bits_per_pixel,
-			vinfo.xoffset, vinfo.yoffset);
+	printf("physical: %dx%d, %dbpp offsets %d in x %d in y\n", vinfo.xres,
+	       vinfo.yres, vinfo.bits_per_pixel, vinfo.xoffset, vinfo.yoffset);
 	printf("line_length in bytes: %d\n", finfo.line_length);
 	printf("vritual: %dx%d\n", vinfo.xres_virtual, vinfo.yres_virtual);
 
 	/* Make room for double/triple buffering */
-	/* FIXME You cannot change yres_virtual. Must be set via kernel parameter.
-	 * And it cannot be smaller than the kernel buffer
+	/* FIXME You cannot change yres_virtual. Must be set via kernel
+	 * parameter. And it cannot be smaller than the kernel buffer
 	 */
-	printf("buffer_count %d yres %d yres_virtual %d\n", buffer_count, vinfo.yres, vinfo.yres_virtual);
+	printf("buffer_count %d yres %d yres_virtual %d\n", buffer_count,
+	       vinfo.yres, vinfo.yres_virtual);
 	vinfo.yres_virtual = buffer_count * vinfo.yres;
-	printf("buffer_count %d yres %d yres_virtual %d\n", buffer_count, vinfo.yres, vinfo.yres_virtual);
+	printf("buffer_count %d yres %d yres_virtual %d\n", buffer_count,
+	       vinfo.yres, vinfo.yres_virtual);
 	if (ioctl(fd, FBIOPUT_VSCREENINFO, &vinfo) == -1) {
 		perror("Error resize virtual buffer size");
 		ret = 4;
 		goto cleanup;
 	}
 
-	printf("physical: %dx%d, %dbpp offsets %d in x %d in y\n",
-			vinfo.xres, vinfo.yres, vinfo.bits_per_pixel,
-			vinfo.xoffset, vinfo.yoffset);
+	printf("physical: %dx%d, %dbpp offsets %d in x %d in y\n", vinfo.xres,
+	       vinfo.yres, vinfo.bits_per_pixel, vinfo.xoffset, vinfo.yoffset);
 	printf("line_length in bytes: %d\n", finfo.line_length);
 	printf("vritual: %dx%d\n", vinfo.xres_virtual, vinfo.yres_virtual);
 
@@ -281,8 +277,8 @@ int main(int argc, char** argv)
 	mmap_size = vinfo.yres * finfo.line_length * buffer_count;
 
 	// Map the device to memory
-	fbp = (char *)mmap(0, mmap_size, PROT_READ | PROT_WRITE, MAP_SHARED,
-					   fd, 0);
+	fbp = (char*)mmap(0, mmap_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
+			  0);
 	if (fbp == MAP_FAILED) {
 		perror("Error: failed to map framebuffer device to memory");
 		return 4;
@@ -295,8 +291,7 @@ int main(int argc, char** argv)
 	signal(SIGTERM, sighandler);
 
 	ret = mainloop(fd);
-	if (ret)
-		fprintf(stderr, "Mainloop ended with error %d", ret);
+	if (ret) fprintf(stderr, "Mainloop ended with error %d", ret);
 
 	munmap(fbp, mmap_size);
 cleanup:

@@ -12,6 +12,10 @@ CFLAGS += -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes
 fb-tests: fb-tests.c
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $^
 
+.PHONY: format
+format:
+	clang-format -i fb-tests.c
+
 .PHONY: clean
 clean:
 	rm -rf $(TARGETS)

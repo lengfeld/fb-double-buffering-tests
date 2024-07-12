@@ -1,0 +1,6 @@
+BasedOnStyle: Google
+IndentWidth: 8
+UseTab: Always
+TabWidth: 8
+PointerAlignment: Left
+ColumnLimit: 100

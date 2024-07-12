@@ -12,5 +12,3 @@ write a good reamde
 text to stdout and stderr nicht visible, because the framebuffer is overwritten by the program.
 
 Fix compiler warnings
-
-TODO apply clang-format
