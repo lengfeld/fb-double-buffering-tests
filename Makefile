@@ -7,7 +7,7 @@ TARGETS = fb-tests
 
 # see https://stackoverflow.com/questions/154630/recommended-gcc-warning-options-for-c
 CFLAGS += -Wall -std=c99 -g -O2 -pedantic -Wall -Wshadow -Wpointer-arith
-CFLAGS += -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes
+CFLAGS += -Wcast-qual -Wstrict-prototypes
 
 fb-tests: fb-tests.c
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $^
