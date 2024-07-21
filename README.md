@@ -2,7 +2,8 @@
 
 This framebuffer test program can perform double or even triple buffering on
 the framebuffer device. It's an example how to implement double/triple
-buffering on the legacy Linux framebuffer device.
+buffering on the legacy Linux framebuffer device. See the file
+[fb-tests.c](fb-tests.c) for details.
 
 It is also useful for testing this legacy feature on embedded Linux devices.
 
